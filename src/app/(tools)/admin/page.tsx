@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { and, asc, eq, gte, lt, notInArray, sql } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm'
 import { getDb } from '@/db'
 import {
   jobs,
@@ -48,7 +48,7 @@ export default async function AdminOverview() {
       })
       .from(orders)
       .innerJoin(profiles, eq(profiles.id, orders.customerId))
-      .where(eq(orders.status, 'paid'))
+      .where(inArray(orders.status, ['paid', 'admin_review']))
       .orderBy(asc(orders.createdAt)),
     db
       .select({
@@ -102,7 +102,7 @@ export default async function AdminOverview() {
           </CardHeader>
           <CardContent>
             <p className="font-display text-3xl">{needsReview.length}</p>
-            <p className="text-sm text-stone">paid, waiting to be routed</p>
+            <p className="text-sm text-stone">captured, waiting to be routed</p>
           </CardContent>
         </Card>
         <Card>

@@ -26,7 +26,7 @@ export async function confirmOrder(orderId: string) {
       .where(eq(orders.id, orderId))
       .for('update')
     if (!order) return 'not-found'
-    if (order.status !== 'paid') return 'not-paid'
+    if (order.status !== 'admin_review' && order.status !== 'paid') return 'not-paid'
 
     const items = await tx
       .select({

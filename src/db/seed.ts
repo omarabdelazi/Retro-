@@ -158,7 +158,7 @@ async function main() {
   const customer = USERS.customer
   await db.insert(schema.orders).values([
     { id: O(1), customerId: customer, status: 'pending', paymentStatus: 'unpaid', subtotal: '38000', total: '38000', currency: 'EGP', createdAt: daysAgo(0), shippingAddress: { name: 'Test Customer', phone: '+201000000001', line1: '12 Corniche St', city: 'Damietta', country: 'EG' } },
-    { id: O(2), customerId: customer, status: 'paid', paymentStatus: 'paid', paymentRef: 'pay_seed_0002', subtotal: '68000', total: '68000', currency: 'EGP', createdAt: daysAgo(3), shippingAddress: { name: 'Test Customer', phone: '+201000000001', line1: '12 Corniche St', city: 'Damietta', country: 'EG' } },
+    { id: O(2), customerId: customer, status: 'admin_review', paymentStatus: 'paid', paymentRef: 'pay_seed_0002', subtotal: '68000', total: '68000', currency: 'EGP', createdAt: daysAgo(3), shippingAddress: { name: 'Test Customer', phone: '+201000000001', line1: '12 Corniche St', city: 'Damietta', country: 'EG' } },
     { id: O(3), customerId: customer, status: 'in_production', paymentStatus: 'paid', paymentRef: 'pay_seed_0003', subtotal: '121000', total: '121000', currency: 'EGP', createdAt: daysAgo(14), shippingAddress: { name: 'Test Customer', phone: '+201000000001', line1: '12 Corniche St', city: 'Damietta', country: 'EG' } },
     // o4 starts in_production; the trigger moves it to ready below
     { id: O(4), customerId: customer, status: 'in_production', paymentStatus: 'paid', paymentRef: 'pay_seed_0004', subtotal: '36000', total: '36000', currency: 'EGP', createdAt: daysAgo(30), shippingAddress: { name: 'Test Customer', phone: '+201000000001', line1: '12 Corniche St', city: 'Damietta', country: 'EG' } },

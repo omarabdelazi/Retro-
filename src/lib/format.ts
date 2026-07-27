@@ -32,7 +32,7 @@ export function daysSince(value: Date | string) {
 
 export const ORDER_STATUSES = [
   'pending',
-  'paid',
+  'admin_review',
   'routed',
   'in_production',
   'ready',

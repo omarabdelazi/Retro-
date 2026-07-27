@@ -31,7 +31,7 @@ import { CancelOrderDialog, ReassignJobDialog } from './dialogs'
 export const dynamic = 'force-dynamic'
 
 const errorMessages: Record<string, string> = {
-  'not-paid': 'Only paid orders can be confirmed.',
+  'not-paid': 'Only orders in admin review can be confirmed.',
   'no-items': 'This order has no items to route.',
   'no-steps':
     'A product on this order has no workshop steps. Set its production chain first.',
@@ -145,7 +145,7 @@ export default async function OrderDetailPage({
           </p>
         </div>
         <div className="flex gap-2">
-          {order.status === 'paid' ? (
+          {order.status === 'admin_review' || order.status === 'paid' ? (
             <form action={confirmOrder.bind(null, order.id)}>
               <Button type="submit">Confirm and route</Button>
             </form>

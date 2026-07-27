@@ -35,6 +35,7 @@ export function statusVariant(
 ): NonNullable<VariantProps<typeof badgeVariants>['variant']> {
   switch (status) {
     case 'paid':
+    case 'admin_review':
     case 'ready':
       return 'solid'
     case 'routed':

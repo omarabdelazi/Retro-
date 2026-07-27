@@ -88,6 +88,44 @@ public storefront data.
 Built for the floor: large touch targets, ink on bone contrast, type at
 arm's-length sizes, overdue work flagged in walnut.
 
+## Payments
+
+Egypt runs on Paymob — cards, mobile wallets, and instalment providers,
+each behind its own integration id — through the Intention API and unified
+checkout. The provider sits behind a small interface
+(`src/lib/payments/types.ts`); checkout and the webhook state machine talk
+to the interface only, so the Gulf provider (Tap or Checkout.com) is a
+second implementation registered for AED, SAR, and KWD — nothing about
+checkout changes when it lands.
+
+Flow:
+
+- `startPayment` (or `POST /api/payments/create`) proves order ownership
+  through the customer's RLS-scoped read, asks the provider for a hosted
+  checkout URL, marks `payment_status = pending`, and logs
+  `payment.initiated`
+- `POST /api/payments/paymob` receives the transaction callback. The HMAC
+  signature is the authentication; the payload is normalised and fed to
+  one provider-agnostic state machine:
+  - capture with the right amount and currency → `payment_status = paid`,
+    order moves to `admin_review`, `payment.captured` logged
+  - capture with the wrong sum → no state change, `payment.mismatch`
+    logged for the admin
+  - declined → `payment_status = failed`, the order stays pending so the
+    customer can retry, `payment.failed` logged
+  - replayed callbacks are no-ops
+- Timeouts are explicit: providers do not reliably call back for abandoned
+  sessions, so a cron posts to `/api/payments/sweep` (CRON_SECRET) and any
+  payment sitting in `pending` past the window is marked failed with a
+  `payment.expired` event. A capture that arrives after the sweep still
+  wins — the money is recorded and the order proceeds to review.
+
+Verified end to end against a mocked Paymob API and signed callbacks: the
+initiation request carries the right minor units and integration ids, and
+the webhook suite covers decline, tampered amounts, bad signatures,
+capture, replay, timeout, late capture after timeout, and the ownership
+and currency guards on creation.
+
 ## Typography and tokens
 
 Fraunces (display) and Work Sans (body) for Latin, Amiri (display) and
@@ -143,12 +181,13 @@ trigger — its jobs are completed by update, not set by hand.
 - Database checks back up the state machine: a rejected job requires a
   `rejection_reason`, a transferred payout requires `transferred_at`,
   quantities are positive, amounts are non-negative.
-- The order lifecycle is `pending → paid → routed → in_production → ready →
-  shipped → delivered`, with `cancelled` reachable until shipping. Admin
-  confirmation moves paid to routed; triggers handle the rest: the first
+- The order lifecycle is `pending → admin_review → routed → in_production →
+  ready → shipped → delivered`, with `cancelled` reachable until shipping.
+  The payment webhook moves a captured order into admin_review; admin
+  confirmation moves it to routed; triggers handle the rest: the first
   accepted job moves routed to in_production, and the last completed job
   moves the order to ready, locking the order row so concurrent completions
-  cannot race. Both transitions append system events to `order_events`.
+  cannot race. Transitions append system events to `order_events`.
 
 ## Access model
 
