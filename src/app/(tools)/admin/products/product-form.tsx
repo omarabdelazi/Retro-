@@ -163,7 +163,7 @@ export function ProductForm({
         <Field label="Image URLs, one per line">
           <Textarea name="images" defaultValue={initial.images} />
         </Field>
-        <Field label="3D model URL (glb, phase 6)">
+        <Field label="3D model URL — GLB, Draco compressed, under 5 MB (npm run check:glb)">
           <Input name="modelGlbUrl" defaultValue={initial.modelGlbUrl} />
         </Field>
       </div>

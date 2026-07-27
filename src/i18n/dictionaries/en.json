@@ -1,5 +1,20 @@
 {
   "brand": "Retro",
   "tagline": "Furniture made the way it used to be made, for how people live now.",
-  "origin": "Solid timber. Damietta, Egypt."
+  "origin": "Solid timber. Damietta, Egypt.",
+  "nav": {
+    "products": "Products",
+    "rooms": "Rooms"
+  },
+  "product": {
+    "inYourSpace": "See it in your space",
+    "dimensions": "Dimensions",
+    "wood": "Wood",
+    "joinery": "Joinery",
+    "finish": "Finish",
+    "mm": "mm"
+  },
+  "room": {
+    "viewPiece": "View the piece"
+  }
 }

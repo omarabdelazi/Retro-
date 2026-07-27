@@ -43,6 +43,14 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000)
 const dateIn = (n: number) =>
   new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
+// deterministic development imagery; production assets live in Supabase Storage
+const scene = (seed: string) => `https://picsum.photos/seed/retro-${seed}/1600/1000`
+
+// Development-only sample model (Khronos glTF sample assets, ~1 MB).
+// Production GLBs must pass `npm run check:glb` — Draco compressed, under 5 MB.
+const SAMPLE_GLB =
+  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/SheenChair/glTF-Binary/SheenChair.glb'
+
 async function main() {
   // ---- clear, respecting FK direction -------------------------------------
   await db.execute(sql`
@@ -93,7 +101,7 @@ async function main() {
     // living
     { id: P(4), slug: 'delta-coffee-table', nameEn: 'Delta Coffee Table', nameAr: 'طاولة الدلتا', room: 'living', category: 'coffee-table', species: 'walnut', joinery: 'mitred dovetail', finish: 'hardwax oil', dimensionsMm: { w: 1200, d: 600, h: 420 }, price: '32000', currency: 'EGP' },
     { id: P(5), slug: 'port-said-bookshelf', nameEn: 'Port Said Bookshelf', nameAr: 'مكتبة بورسعيد', room: 'living', category: 'bookshelf', species: 'oak', joinery: 'housed dado', finish: 'shellac', dimensionsMm: { w: 1000, d: 350, h: 1900 }, price: '46000', currency: 'EGP' },
-    { id: P(6), slug: 'luxor-armchair', nameEn: 'Luxor Armchair', nameAr: 'كرسي الأقصر', room: 'living', category: 'armchair', species: 'beech', joinery: 'mortise-and-tenon', finish: 'hardwax oil', dimensionsMm: { w: 700, d: 780, h: 900 }, price: '28000', currency: 'EGP' },
+    { id: P(6), slug: 'luxor-armchair', nameEn: 'Luxor Armchair', nameAr: 'كرسي الأقصر', room: 'living', category: 'armchair', species: 'beech', joinery: 'mortise-and-tenon', finish: 'hardwax oil', dimensionsMm: { w: 700, d: 780, h: 900 }, price: '28000', currency: 'EGP', modelGlbUrl: SAMPLE_GLB, descriptionEn: 'A low, wide armchair in solid beech. The frame is cut and joined by hand in Damietta; the finish is hardwax oil, nothing else.', descriptionAr: 'كرسي منخفض وواسع من خشب الزان المتين. الهيكل مقطوع ومعشّق يدوياً في دمياط، والتشطيب زيت شمعي لا غير.' },
     // bedroom
     { id: P(7), slug: 'delta-bed', nameEn: 'Delta Bed', nameAr: 'سرير الدلتا', room: 'bedroom', category: 'bed', species: 'oak', joinery: 'dovetail', finish: 'hardwax oil', dimensionsMm: { w: 1800, d: 2100, h: 1100 }, price: '92000', currency: 'EGP' },
     { id: P(8), slug: 'fayoum-wardrobe', nameEn: 'Fayoum Wardrobe', nameAr: 'دولاب الفيوم', room: 'bedroom', category: 'wardrobe', species: 'beech', joinery: 'frame-and-panel', finish: 'shellac', dimensionsMm: { w: 2400, d: 650, h: 2200 }, price: '120000', currency: 'EGP' },
@@ -103,6 +111,14 @@ async function main() {
     { id: P(11), slug: 'majlis-coffee-table', nameEn: 'Majlis Coffee Table', nameAr: 'طاولة المجلس', room: 'majlis', category: 'coffee-table', species: 'walnut', joinery: 'dovetail', finish: 'hardwax oil', dimensionsMm: { w: 900, d: 900, h: 380 }, price: '36000', currency: 'EGP' },
     { id: P(12), slug: 'mashrabiya-screen', nameEn: 'Mashrabiya Screen', nameAr: 'حاجز مشربية', room: 'majlis', category: 'screen', species: 'beech', joinery: 'turned-and-pegged lattice', finish: 'shellac', dimensionsMm: { w: 1500, d: 40, h: 2000 }, price: '58000', currency: 'EGP' },
   ])
+
+  // two deterministic development photos per product, derived from the slug
+  await db.execute(sql`
+    update public.products set images = array[
+      'https://picsum.photos/seed/retro-' || slug || '-1/1200/1200',
+      'https://picsum.photos/seed/retro-' || slug || '-2/1200/1200'
+    ]
+  `)
 
   // production chains: joinery first, finishing last
   await db.insert(schema.productWorkshops).values([
@@ -140,10 +156,10 @@ async function main() {
 
   // ---- 4 room scenes ------------------------------------------------------
   await db.insert(schema.rooms).values([
-    { id: R(1), slug: 'dining', nameEn: 'Dining', nameAr: 'السفرة', sceneImageUrl: '/scenes/dining.jpg' },
-    { id: R(2), slug: 'living', nameEn: 'Living', nameAr: 'المعيشة', sceneImageUrl: '/scenes/living.jpg' },
-    { id: R(3), slug: 'bedroom', nameEn: 'Bedroom', nameAr: 'غرفة النوم', sceneImageUrl: '/scenes/bedroom.jpg' },
-    { id: R(4), slug: 'majlis', nameEn: 'Majlis', nameAr: 'المجلس', sceneImageUrl: '/scenes/majlis.jpg' },
+    { id: R(1), slug: 'dining', nameEn: 'Dining', nameAr: 'السفرة', sceneImageUrl: scene('dining') },
+    { id: R(2), slug: 'living', nameEn: 'Living', nameAr: 'المعيشة', sceneImageUrl: scene('living') },
+    { id: R(3), slug: 'bedroom', nameEn: 'Bedroom', nameAr: 'غرفة النوم', sceneImageUrl: scene('bedroom') },
+    { id: R(4), slug: 'majlis', nameEn: 'Majlis', nameAr: 'المجلس', sceneImageUrl: scene('majlis') },
   ])
   await db.insert(schema.roomHotspots).values([
     { roomId: R(1), productId: P(1), x: 0.48, y: 0.62, labelEn: 'Nile Dining Table', labelAr: 'طاولة النيل' },

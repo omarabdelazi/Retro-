@@ -1,7 +1,7 @@
 // Every price carries an explicit currency; Intl renders KWD with its three
-// decimal places on its own.
-export function money(amount: string | number, currency: string) {
-  return new Intl.NumberFormat('en', {
+// decimal places on its own, and the ar locale gets Arabic numerals.
+export function money(amount: string | number, currency: string, locale = 'en') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     currencyDisplay: 'code',

@@ -126,6 +126,28 @@ the webhook suite covers decline, tampered amounts, bad signatures,
 capture, replay, timeout, late capture after timeout, and the ownership
 and currency guards on creation.
 
+## 3D and AR
+
+Product and room pages live under the locale tree and read through the
+anonymous RLS-scoped client — an inactive product is a 404 by
+construction, in both languages with full RTL.
+
+- A product with `model_glb_url` gets `@google/model-viewer`: web 3D plus
+  AR from the one GLB — WebXR and Scene Viewer on Android, Quick Look on
+  iOS (the USDZ is generated on device). A product without a model shows
+  photography and no viewer; there is no placeholder state in the code.
+- The library never blocks first paint: the page ships only the
+  `<model-viewer>` markup with a poster image, and the ~440 kB library
+  chunk is imported when the viewer scrolls near the viewport. The chunk
+  does not appear in the initial HTML.
+- Room pages are a high-resolution 2D render with 2D hotspots from
+  `room_hotspots` — a fraction of the weight of a 3D scene, works on any
+  phone. Tapping a hotspot opens a card with the piece's name, material,
+  price, and a link. Hotspots whose product is inactive disappear with it.
+- Model budget: every GLB under 5 MB and Draco compressed, enforced by
+  `npm run check:glb -- <files>` which reads the GLB container and the
+  glTF extension list. Run it before uploading any model.
+
 ## Typography and tokens
 
 Fraunces (display) and Work Sans (body) for Latin, Amiri (display) and
