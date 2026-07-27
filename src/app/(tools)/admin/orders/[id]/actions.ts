@@ -29,7 +29,11 @@ export async function confirmOrder(orderId: string) {
     if (order.status !== 'paid') return 'not-paid'
 
     const items = await tx
-      .select({ id: orderItems.id, productId: orderItems.productId })
+      .select({
+        id: orderItems.id,
+        productId: orderItems.productId,
+        qty: orderItems.qty,
+      })
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId))
     if (items.length === 0) return 'no-items'
@@ -59,11 +63,17 @@ export async function confirmOrder(orderId: string) {
       return 'no-steps'
     }
 
+    // each step gets two weeks, staggered down the chain
     const jobRows = items.flatMap((item) =>
       (byProduct.get(item.productId) ?? []).map((step) => ({
         orderItemId: item.id,
+        productId: item.productId,
+        qty: item.qty,
         workshopId: step.workshopId,
         sequence: step.sequence,
+        dueDate: new Date(Date.now() + step.sequence * 14 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10),
       })),
     )
 

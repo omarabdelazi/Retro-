@@ -9,10 +9,20 @@ export async function signIn(formData: FormData) {
   if (!email || !password) redirect('/login?error=invalid')
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) redirect('/login?error=invalid')
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error || !data.user) redirect('/login?error=invalid')
 
-  redirect('/admin')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single()
+
+  if (profile?.role === 'admin') redirect('/admin')
+  if (profile?.role === 'workshop') redirect('/workshop')
+
+  await supabase.auth.signOut()
+  redirect('/login?error=denied')
 }
 
 export async function signOut() {

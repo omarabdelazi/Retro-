@@ -85,6 +85,10 @@ export const jobsRelations = relations(jobs, ({ one }) => ({
     fields: [jobs.orderItemId],
     references: [orderItems.id],
   }),
+  product: one(products, {
+    fields: [jobs.productId],
+    references: [products.id],
+  }),
   workshop: one(workshops, {
     fields: [jobs.workshopId],
     references: [workshops.id],

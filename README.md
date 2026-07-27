@@ -16,6 +16,7 @@ src/app/globals.css        design tokens as CSS custom properties, Tailwind v4
 src/app/[locale]/          locale-scoped storefront tree (en, ar)
 src/app/(tools)/login/     dashboard sign in (Supabase password auth)
 src/app/(tools)/admin/     admin dashboard — see below
+src/app/(tools)/workshop/  workshop floor dashboard — see below
 src/middleware.ts          locale negotiation plus Supabase session refresh
 src/i18n/                  locale config and dictionaries
 src/lib/supabase/          server and browser Supabase clients
@@ -30,6 +31,8 @@ drizzle/
   0002_order_ready_trigger.sql  order moves to ready when its last job completes
   0003_routed_status_job_created_at.sql  routed status, jobs.created_at
   0004_production_flow_triggers.sql  routed → in_production → ready flow
+  0005_job_floor_columns.sql         jobs.product_id, jobs.qty, jobs.due_date
+  0006_workshop_rls_hardening.sql    column grants, transition trigger, policy tightening
 ```
 
 ## Admin dashboard
@@ -55,6 +58,35 @@ jobs, and payouts and re-renders on change — no polling, no animation.
 
 The dashboard chrome is English for this phase; every content field in it
 (names, descriptions, labels) is edited in both English and Arabic.
+
+## Workshop dashboard
+
+`/workshop` is one dashboard scoped by the signed-in user's `workshop_id` —
+there is no per-workshop code. Unlike the admin surface it never touches the
+service connection: every read and write goes through the user's own
+Supabase client, so RLS row policies, column grants, and the job transition
+trigger are the enforcement, and no `workshop_id` filter exists in
+application code at all.
+
+- `/workshop` — the job queue: incoming, in production, completed this
+  month. Realtime on jobs, so new work appears without a refresh
+- `/workshop/jobs/[id]` — the spec sheet: dimensions, species, joinery,
+  finish, quantity, due date, and the job's own payout when raised.
+  Actions: accept, reject with a reason, start production, mark complete
+- `/workshop/history` — completed jobs with payout status
+
+Jobs carry `product_id` and `qty` denormalised from the order item, which
+is what lets a workshop see nothing of `order_items` — the table that
+holds unit prices. A workshop user querying the API directly gets: zero
+orders (no totals, no addresses), zero order items, zero foreign jobs or
+payouts, no profiles but their own. Progress fields are the only writable
+columns, and status only moves along the real workflow — jumping pending
+to completed, reopening finished work, or editing qty fails at the
+database. Catalog prices on `products` remain readable because they are
+public storefront data.
+
+Built for the floor: large touch targets, ink on bone contrast, type at
+arm's-length sizes, overdue work flagged in walnut.
 
 ## Typography and tokens
 
@@ -132,8 +164,8 @@ Row Level Security is the boundary, not application code. Policies call
 | product_workshops  | none           | none                           | own steps                         | all   |
 | collections, rooms | read           | read                           | read                              | all   |
 | orders             | none           | own; create pending            | none                              | all   |
-| order_items        | none           | own; add while order pending   | items behind its jobs             | all   |
-| jobs               | none           | none                           | own; update, cannot reassign      | all   |
+| order_items        | none           | own; add while order pending   | none — jobs carry product and qty | all   |
+| jobs               | none           | none                           | own; progress columns only, along the workflow | all |
 | payouts            | none           | none                           | own, read only                    | all   |
 | order_events       | none           | own orders; append only        | none directly (trigger appends)   | all   |
 
@@ -142,10 +174,13 @@ service role: insert, update, and delete are revoked from API roles, then
 update is granted back on `full_name` and `phone` alone.
 
 The full policy set was verified against Postgres 16 with a stubbed Supabase
-environment: 89 assertions covering every role boundary, including forged
+environment: 118 checks covering every role boundary, including forged
 orders, cross-workshop reads and updates, privilege escalation through
-`profiles.role`, tampering with the audit log, the seed data, and the
-order-ready trigger.
+`profiles.role`, tampering with the audit log, the production flow
+triggers, and an adversarial workshop suite that attacks the boundary the
+way a crafted API call would — skipping the workflow, rewriting quantities,
+reassigning jobs, editing payouts. The dashboards were additionally
+exercised end-to-end against a real PostgREST with signed JWTs.
 
 ## Stack
 

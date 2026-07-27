@@ -36,6 +36,20 @@
       "when": 1785183147152,
       "tag": "0004_production_flow_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785184467421,
+      "tag": "0005_job_floor_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785184468309,
+      "tag": "0006_workshop_rls_hardening",
+      "breakpoints": true
     }
   ]
 }

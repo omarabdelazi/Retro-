@@ -5,7 +5,7 @@ import { defaultLocale, isLocale, locales, type Locale } from '@/i18n/config'
 // Two jobs: keep Supabase sessions fresh for the tool routes, and put every
 // storefront path behind a locale. Tool routes (/admin, /login) sit outside
 // the locale tree — the dashboard chrome is not storefront surface.
-const TOOL_PREFIXES = ['/admin', '/login']
+const TOOL_PREFIXES = ['/admin', '/workshop', '/login']
 
 function negotiateLocale(request: NextRequest): Locale {
   const header = request.headers.get('accept-language')

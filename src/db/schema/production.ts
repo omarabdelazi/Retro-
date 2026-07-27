@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import {
   bigint,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -14,10 +15,14 @@ import {
 } from 'drizzle-orm/pg-core'
 import { currency, jobStatus, payoutStatus } from './enums'
 import { orderItems, orders } from './commerce'
+import { products } from './catalog'
 import { profiles, workshops } from './identity'
 
 // One job per workshop step per order item, created from product_workshops
-// when an order is paid.
+// when an admin confirms a paid order. product_id and qty are denormalised
+// from the order item on purpose: they make a job self-sufficient for the
+// workshop floor, so order_items — which carries unit_price — never needs
+// to be readable by workshop users.
 export const jobs = pgTable(
   'jobs',
   {
@@ -25,11 +30,16 @@ export const jobs = pgTable(
     orderItemId: uuid('order_item_id')
       .notNull()
       .references(() => orderItems.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'restrict' }),
     workshopId: uuid('workshop_id')
       .notNull()
       .references(() => workshops.id, { onDelete: 'restrict' }),
     sequence: integer('sequence').notNull(),
+    qty: integer('qty').notNull(),
     status: jobStatus('status').notNull().default('pending'),
+    dueDate: date('due_date'),
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
     startedAt: timestamp('started_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -40,7 +50,9 @@ export const jobs = pgTable(
     unique('jobs_order_item_sequence_unique').on(t.orderItemId, t.sequence),
     index('jobs_workshop_status_idx').on(t.workshopId, t.status),
     index('jobs_order_item_id_idx').on(t.orderItemId),
+    index('jobs_product_id_idx').on(t.productId),
     check('jobs_sequence_positive', sql`${t.sequence} >= 1`),
+    check('jobs_qty_positive', sql`${t.qty} > 0`),
     check(
       'jobs_rejection_reason_required',
       sql`${t.status} <> 'rejected' or ${t.rejectionReason} is not null`,

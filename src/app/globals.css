@@ -52,6 +52,12 @@
     color: var(--color-bone);
   }
 
+  /* inline Arabic inside an LTR document (the tool chrome) gets its own
+     text face; RTL documents already switch faces at the root */
+  html[dir='ltr'] :lang(ar) {
+    font-family: var(--font-plex-arabic), sans-serif;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-ochre);
     outline-offset: 2px;
