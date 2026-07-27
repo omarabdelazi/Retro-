@@ -176,21 +176,21 @@ async function main() {
 
   await db.insert(schema.jobs).values([
     // o2 just paid — chain queued
-    { id: J(1), orderItemId: I(21), workshopId: W.joinery, sequence: 1, status: 'pending' },
-    { id: J(2), orderItemId: I(21), workshopId: W.assembly, sequence: 2, status: 'pending' },
-    { id: J(3), orderItemId: I(21), workshopId: W.finishing, sequence: 3, status: 'pending' },
-    // o3 mid-production
-    { id: J(4), orderItemId: I(31), workshopId: W.joinery, sequence: 1, status: 'in_progress', acceptedAt: daysAgo(12), startedAt: daysAgo(10) },
-    { id: J(5), orderItemId: I(31), workshopId: W.carving, sequence: 2, status: 'pending' },
-    { id: J(6), orderItemId: I(31), workshopId: W.finishing, sequence: 3, status: 'pending' },
-    { id: J(7), orderItemId: I(32), workshopId: W.joinery, sequence: 1, status: 'accepted', acceptedAt: daysAgo(11) },
-    { id: J(8), orderItemId: I(32), workshopId: W.finishing, sequence: 2, status: 'pending' },
+    { id: J(1), orderItemId: I(21), workshopId: W.joinery, sequence: 1, status: 'pending', createdAt: daysAgo(3) },
+    { id: J(2), orderItemId: I(21), workshopId: W.assembly, sequence: 2, status: 'pending', createdAt: daysAgo(3) },
+    { id: J(3), orderItemId: I(21), workshopId: W.finishing, sequence: 3, status: 'pending', createdAt: daysAgo(3) },
+    // o3 mid-production, created long enough ago to read as overdue
+    { id: J(4), orderItemId: I(31), workshopId: W.joinery, sequence: 1, status: 'in_progress', createdAt: daysAgo(13), acceptedAt: daysAgo(12), startedAt: daysAgo(10) },
+    { id: J(5), orderItemId: I(31), workshopId: W.carving, sequence: 2, status: 'pending', createdAt: daysAgo(13) },
+    { id: J(6), orderItemId: I(31), workshopId: W.finishing, sequence: 3, status: 'pending', createdAt: daysAgo(13) },
+    { id: J(7), orderItemId: I(32), workshopId: W.joinery, sequence: 1, status: 'accepted', createdAt: daysAgo(13), acceptedAt: daysAgo(11) },
+    { id: J(8), orderItemId: I(32), workshopId: W.finishing, sequence: 2, status: 'pending', createdAt: daysAgo(13) },
     // o4 both steps accepted; completed below through the trigger path
-    { id: J(9), orderItemId: I(41), workshopId: W.joinery, sequence: 1, status: 'accepted', acceptedAt: daysAgo(28) },
-    { id: J(10), orderItemId: I(41), workshopId: W.finishing, sequence: 2, status: 'accepted', acceptedAt: daysAgo(25) },
+    { id: J(9), orderItemId: I(41), workshopId: W.joinery, sequence: 1, status: 'accepted', createdAt: daysAgo(29), acceptedAt: daysAgo(28) },
+    { id: J(10), orderItemId: I(41), workshopId: W.finishing, sequence: 2, status: 'accepted', createdAt: daysAgo(29), acceptedAt: daysAgo(25) },
     // o5 long done
-    { id: J(11), orderItemId: I(51), workshopId: W.joinery, sequence: 1, status: 'completed', acceptedAt: daysAgo(44), startedAt: daysAgo(43), completedAt: daysAgo(40) },
-    { id: J(12), orderItemId: I(51), workshopId: W.finishing, sequence: 2, status: 'completed', acceptedAt: daysAgo(40), startedAt: daysAgo(39), completedAt: daysAgo(37) },
+    { id: J(11), orderItemId: I(51), workshopId: W.joinery, sequence: 1, status: 'completed', createdAt: daysAgo(44), acceptedAt: daysAgo(44), startedAt: daysAgo(43), completedAt: daysAgo(40) },
+    { id: J(12), orderItemId: I(51), workshopId: W.finishing, sequence: 2, status: 'completed', createdAt: daysAgo(44), acceptedAt: daysAgo(40), startedAt: daysAgo(39), completedAt: daysAgo(37) },
   ])
 
   // completing o4's jobs fires log_job_event and advance_order_when_complete;

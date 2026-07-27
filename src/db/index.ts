@@ -2,22 +2,28 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 
-// Server-side only. DATABASE_URL must never reach client code; import this
-// module from Server Components, Route Handlers, and Server Actions only.
-function createClient() {
+// Server-side only; never import from a Client Component. The connection is
+// the service-level DATABASE_URL, so it does not run under RLS — every query
+// path that reaches it must first pass requireAdmin() (src/lib/auth.ts).
+// RLS remains the boundary for everything that talks to Supabase directly:
+// the browser client, PostgREST, and Realtime.
+function createDb() {
   const url = process.env.DATABASE_URL
   if (!url) {
     throw new Error('DATABASE_URL is not set')
   }
   // prepare: false — required behind the Supabase transaction pooler
-  return postgres(url, { prepare: false })
+  const client = postgres(url, { prepare: false })
+  return drizzle(client, { schema })
 }
 
-const globalForDb = globalThis as unknown as { pgClient?: ReturnType<typeof createClient> }
+export type Db = ReturnType<typeof createDb>
 
-const client = globalForDb.pgClient ?? createClient()
-if (process.env.NODE_ENV !== 'production') globalForDb.pgClient = client
+const globalForDb = globalThis as unknown as { retroDb?: Db }
 
-export const db = drizzle(client, { schema })
+// Lazy so importing this module never needs an environment (next build).
+export function getDb(): Db {
+  return (globalForDb.retroDb ??= createDb())
+}
 
 export * as dbSchema from './schema'

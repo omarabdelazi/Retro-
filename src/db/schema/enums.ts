@@ -6,6 +6,10 @@ export const userRole = pgEnum('user_role', ['admin', 'workshop', 'customer'])
 // which is why every money column is numeric(12,3).
 export const currency = pgEnum('currency', ['EGP', 'AED', 'SAR', 'KWD'])
 
+// Lifecycle: pending → paid → routed → in_production → ready → shipped →
+// delivered, with cancelled reachable until shipping. 'routed' sits last in
+// the array because Postgres only appends enum values; array position does
+// not affect behaviour.
 export const orderStatus = pgEnum('order_status', [
   'pending',
   'paid',
@@ -14,6 +18,7 @@ export const orderStatus = pgEnum('order_status', [
   'shipped',
   'delivered',
   'cancelled',
+  'routed',
 ])
 
 export const paymentStatus = pgEnum('payment_status', [

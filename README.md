@@ -4,33 +4,57 @@ Full-home solid timber furniture. Damietta, Egypt. Markets: Egypt, UAE,
 Saudi Arabia, Kuwait.
 
 Next.js 15 (App Router, TypeScript strict, Tailwind v4) with the platform
-foundation: design tokens, bilingual routing with full RTL, the Drizzle
-schema, migrations, seed data, and the Row Level Security policies that form
-the security boundary. No UI yet beyond a placeholder route.
+foundation and the admin dashboard: design tokens, bilingual routing with
+full RTL, the Drizzle schema, migrations, seed data, the Row Level Security
+policies that form the security boundary, and `/admin` built on shadcn/ui
+patterns restyled to the Retro tokens.
 
 ## Layout
 
 ```
 src/app/globals.css        design tokens as CSS custom properties, Tailwind v4
-src/app/[locale]/          locale-scoped App Router tree (en, ar)
-src/middleware.ts          locale negotiation and redirect
+src/app/[locale]/          locale-scoped storefront tree (en, ar)
+src/app/(tools)/login/     dashboard sign in (Supabase password auth)
+src/app/(tools)/admin/     admin dashboard — see below
+src/middleware.ts          locale negotiation plus Supabase session refresh
 src/i18n/                  locale config and dictionaries
 src/lib/supabase/          server and browser Supabase clients
+src/lib/auth.ts            requireAdmin() gate for every admin page and action
+src/components/ui/         shadcn/ui components restyled to the tokens
 src/db/schema/             Drizzle schema, split by domain
-  enums.ts                 roles, currencies, statuses
-  identity.ts              workshops, profiles
-  catalog.ts               products, product_workshops, collections, collection_products
-  commerce.ts              orders, order_items
-  production.ts            jobs, payouts, order_events
-  rooms.ts                 rooms, room_hotspots
-  relations.ts             Drizzle relations for the query API
-src/db/index.ts            server-only Postgres client (drizzle + postgres-js)
+src/db/index.ts            lazy server-only Postgres client (drizzle + postgres-js)
 src/db/seed.ts             development seed
 drizzle/
   0000_init.sql              tables, enums, constraints, indexes, RLS enabled
   0001_rls_policies.sql      helper functions, triggers, grants, policies
   0002_order_ready_trigger.sql  order moves to ready when its last job completes
+  0003_routed_status_job_created_at.sql  routed status, jobs.created_at
+  0004_production_flow_triggers.sql  routed → in_production → ready flow
 ```
+
+## Admin dashboard
+
+`/admin` is gated by `requireAdmin()`: identity resolves through the
+RLS-scoped Supabase client, and only admins pass. Pages then query through
+the service-level Drizzle connection; every state change is a server action
+that re-checks the admin, runs in a transaction, and writes to
+`order_events`. The overview subscribes to Supabase Realtime on orders,
+jobs, and payouts and re-renders on change — no polling, no animation.
+
+- `/admin` — orders needing review, overdue jobs, outstanding payouts,
+  revenue this month, live from the database
+- `/admin/orders` — all orders, filterable by status and workshop
+- `/admin/orders/[id]` — items, jobs per workshop step, order history.
+  Confirming a paid order generates jobs from `product_workshops` and moves
+  it to `routed`; jobs can be reassigned while unstarted; orders can be
+  cancelled until they ship
+- `/admin/products` — product CRUD including the workshop production chain
+- `/admin/collections` — collection CRUD, drag to reorder products
+- `/admin/payouts` — pending payouts by workshop, mark as transferred
+- `/admin/workshops` — workshop CRUD and user assignment by email
+
+The dashboard chrome is English for this phase; every content field in it
+(names, descriptions, labels) is edited in both English and Arabic.
 
 ## Typography and tokens
 
@@ -87,9 +111,12 @@ trigger — its jobs are completed by update, not set by hand.
 - Database checks back up the state machine: a rejected job requires a
   `rejection_reason`, a transferred payout requires `transferred_at`,
   quantities are positive, amounts are non-negative.
-- When the last job on an order reaches `completed`, a trigger moves the
-  order to `ready` and appends an `order.ready` system event. The trigger
-  locks the order row first so two jobs finishing at once cannot race.
+- The order lifecycle is `pending → paid → routed → in_production → ready →
+  shipped → delivered`, with `cancelled` reachable until shipping. Admin
+  confirmation moves paid to routed; triggers handle the rest: the first
+  accepted job moves routed to in_production, and the last completed job
+  moves the order to ready, locking the order row so concurrent completions
+  cannot race. Both transitions append system events to `order_events`.
 
 ## Access model
 
