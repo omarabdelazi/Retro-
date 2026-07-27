@@ -1,0 +1,13 @@
+# Local values for `npm run cf:preview` (wrangler picks up .dev.vars).
+# Copy to .dev.vars and fill in. Never commit .dev.vars.
+DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:8787
+PAYMOB_SECRET_KEY=sk_test_xxx
+PAYMOB_PUBLIC_KEY=pk_test_xxx
+PAYMOB_HMAC_SECRET=your-hmac-secret
+PAYMOB_INTEGRATION_ID_CARD=111111
+PAYMOB_INTEGRATION_ID_WALLET=222222
+PAYMOB_INTEGRATION_ID_INSTALLMENTS=333333
+CRON_SECRET=change-me

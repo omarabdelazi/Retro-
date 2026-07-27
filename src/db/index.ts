@@ -21,8 +21,16 @@ export type Db = ReturnType<typeof createDb>
 
 const globalForDb = globalThis as unknown as { retroDb?: Db }
 
+// On Cloudflare Workers a TCP socket opened during one request cannot be
+// reused by another, so the client is created per call there (the Supabase
+// transaction pooler makes those connections cheap). Everywhere else the
+// client is memoised.
+const onWorkers =
+  typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers'
+
 // Lazy so importing this module never needs an environment (next build).
 export function getDb(): Db {
+  if (onWorkers) return createDb()
   return (globalForDb.retroDb ??= createDb())
 }
 

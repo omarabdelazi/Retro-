@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "retro",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (set with `npx wrangler secret put <NAME>` or in the dashboard):
+  //   DATABASE_URL                 Supabase transaction pooler connection string
+  //   PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, PAYMOB_HMAC_SECRET
+  //   PAYMOB_INTEGRATION_ID_CARD / _WALLET / _INSTALLMENTS
+  //   CRON_SECRET
+  //
+  // NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and
+  // NEXT_PUBLIC_SITE_URL are inlined into the client bundle at BUILD time —
+  // they must be present in the environment that runs `npm run cf:build`
+  // (see DEPLOY.md), not only as runtime vars.
+}

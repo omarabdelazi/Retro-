@@ -243,9 +243,16 @@ way a crafted API call would — skipping the workflow, rewriting quantities,
 reassigning jobs, editing payouts. The dashboards were additionally
 exercised end-to-end against a real PostgREST with signed JWTs.
 
+## Deployment
+
+Cloudflare Workers via `@opennextjs/cloudflare` — see `DEPLOY.md` for the
+full runbook (Supabase setup, secrets, the build-time env rule, and both
+deploy paths). `npm run cf:preview` runs the production Worker build
+locally in workerd; `npm run cf:deploy` ships it.
+
 ## Stack
 
 Next.js 15 (App Router), TypeScript strict, Tailwind CSS v4, Supabase,
-Drizzle ORM. Framer Motion and shadcn/ui join with the first UI phase.
-Deployed on Vercel. See `CLAUDE.md` for the design tokens and rules the
-rest of the platform follows.
+Drizzle ORM, shadcn/ui restyled to the tokens. Deployed on Cloudflare
+Workers. See `CLAUDE.md` for the design tokens and rules the rest of the
+platform follows.
