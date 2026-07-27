@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — CLAUDE.md, do not deviate.
+ * Bone is the ground (60-70%), Ink is all text (20-25%), Walnut is warmth
+ * (5-10%), Stone is rules and captions only, Ochre is interaction states
+ * only and never sits on Bone.
+ */
+@theme {
+  --color-bone: #f3eee5;
+  --color-ink: #141210;
+  --color-walnut: #5c3d2e;
+  --color-stone: #a8a099;
+  --color-ochre: #c08a2e;
+
+  --font-display: var(--font-fraunces), serif;
+  --font-body: var(--font-work-sans), sans-serif;
+
+  --text-base: 1rem; /* body never below 16px */
+}
+
+/* Arabic takes over both faces when the document runs right to left */
+:root[dir='rtl'] {
+  --font-display: var(--font-amiri), serif;
+  --font-body: var(--font-plex-arabic), sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-bone);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
+  ::selection {
+    background-color: var(--color-walnut);
+    color: var(--color-bone);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ochre);
+    outline-offset: 2px;
+  }
+}
+
+/* Motion is purposeful only; none at all for those who ask for none */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
