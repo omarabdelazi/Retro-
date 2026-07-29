@@ -57,6 +57,13 @@
       "when": 1785185308228,
       "tag": "0007_admin_review_status",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785332772032,
+      "tag": "0008_storage_buckets",
+      "breakpoints": true
     }
   ]
 }

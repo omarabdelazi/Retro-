@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { checkGlb } from '@/lib/glb'
+import { createClient } from '@/lib/supabase/browser'
 
 type WorkshopOption = { id: string; nameEn: string }
 
@@ -67,6 +69,66 @@ export function ProductForm({
   const [steps, setSteps] = useState(initial.steps)
   const [room, setRoom] = useState(initial.room)
   const [curr, setCurr] = useState(initial.currency)
+  const [images, setImages] = useState(initial.images)
+  const [modelUrl, setModelUrl] = useState(initial.modelGlbUrl)
+  const [uploading, setUploading] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  // uploads land in the public Supabase buckets; storage RLS only lets
+  // admins write, so this runs on the signed-in session
+  async function uploadAsset(bucket: 'images' | 'models', file: File) {
+    const supabase = createClient()
+    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      contentType: file.type || undefined,
+    })
+    if (error) throw new Error(error.message)
+    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+  }
+
+  async function handleImageFiles(files: FileList | null) {
+    if (!files?.length) return
+    setUploadError(null)
+    setUploading('photos')
+    try {
+      const urls: string[] = []
+      for (const file of Array.from(files)) {
+        urls.push(await uploadAsset('images', file))
+      }
+      setImages((prev) => [prev.trim(), ...urls].filter(Boolean).join('\n'))
+    } catch (error) {
+      setUploadError(`Photo upload failed: ${(error as Error).message}`)
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  async function handleModelFile(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    setUploadError(null)
+
+    const verdict = checkGlb(await file.arrayBuffer())
+    if (!verdict.ok) {
+      setUploadError(
+        verdict.reason === 'too-large'
+          ? `Model is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 5 MB. Compress it first: npx @gltf-transform/cli optimize in.glb out.glb --compress draco`
+          : verdict.reason === 'not-draco'
+            ? 'Model is not Draco compressed. Run: npx @gltf-transform/cli optimize in.glb out.glb --compress draco'
+            : 'That file is not a valid .glb model.',
+      )
+      return
+    }
+
+    setUploading('model')
+    try {
+      setModelUrl(await uploadAsset('models', file))
+    } catch (error) {
+      setUploadError(`Model upload failed: ${(error as Error).message}`)
+    } finally {
+      setUploading(null)
+    }
+  }
 
   function moveStep(index: number, delta: -1 | 1) {
     setSteps((prev) => {
@@ -160,13 +222,53 @@ export function ProductForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Image URLs, one per line">
-          <Textarea name="images" defaultValue={initial.images} />
+        <Field label="Photos — upload files or paste URLs, one per line">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading !== null}
+            onChange={(e) => {
+              void handleImageFiles(e.target.files)
+              e.target.value = ''
+            }}
+            className="block w-full text-sm text-ink file:me-3 file:rounded-xs file:border file:border-stone file:bg-bone file:px-3 file:py-1.5 file:text-sm file:text-ink hover:file:border-ochre"
+          />
+          <Textarea
+            name="images"
+            value={images}
+            onChange={(e) => setImages(e.target.value)}
+            className="mt-2"
+          />
         </Field>
-        <Field label="3D model URL — GLB, Draco compressed, under 5 MB (npm run check:glb)">
-          <Input name="modelGlbUrl" defaultValue={initial.modelGlbUrl} />
+        <Field label="3D model — upload a GLB (Draco, under 5 MB) or paste a URL">
+          <input
+            type="file"
+            accept=".glb,model/gltf-binary"
+            disabled={uploading !== null}
+            onChange={(e) => {
+              void handleModelFile(e.target.files)
+              e.target.value = ''
+            }}
+            className="block w-full text-sm text-ink file:me-3 file:rounded-xs file:border file:border-stone file:bg-bone file:px-3 file:py-1.5 file:text-sm file:text-ink hover:file:border-ochre"
+          />
+          <Input
+            name="modelGlbUrl"
+            value={modelUrl}
+            onChange={(e) => setModelUrl(e.target.value)}
+            className="mt-2"
+          />
         </Field>
       </div>
+
+      {uploading ? (
+        <p className="text-sm text-stone">Uploading {uploading}…</p>
+      ) : null}
+      {uploadError ? (
+        <p className="border border-walnut/50 bg-walnut/10 px-3 py-2 text-sm text-walnut">
+          {uploadError}
+        </p>
+      ) : null}
 
       <fieldset className="space-y-2">
         <legend className="text-sm text-stone">
